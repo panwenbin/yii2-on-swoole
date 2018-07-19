@@ -1,3 +1,8 @@
+## 安装
+```
+composer require panwenbin/yii2-on-swoole
+```
+
 ## 使用
 ```
 $ vendor/bin/yii2onswoole
@@ -21,3 +26,12 @@ defined('YII_ENV') or define('YII_ENV', 'prod'); // 如果不定义则是dev
 ```
 
 ## worker_stop.php
+在Yii项目的根目录建立`worker_stop.php`，worker进程正常退出时调用
+
+## 程序编写注意事项
+- 使用Yii2推荐的写法编写程序
+- 不能使用exit()/die()，它会结束worker进程
+- 不要使用php内置session函数，已封装RedisSession
+- 不要使用php内置cookie函数，已封装到Response，或者直接操作Swoole的Response
+- 不要使用echo/print/print_f/var_dump输出页面内容，他们只会在控制台输出内容
+- 不要使用static变量存储内容，它会在下次请求到来时产生干扰
