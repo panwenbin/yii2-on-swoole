@@ -1,0 +1,95 @@
+#!/usr/bin/env php
+<?php
+
+// TODO:检测swoole及swoole版本
+
+// 参数检测
+if ($argc <= 1) {
+    cmdHelp();
+    exit;
+}
+$cmd = $argv[1];
+$app = $argv[2] ?? '';
+checkApp($app);
+$pidFile = "/tmp/yii2-on-swoole_{$app}.pid";
+
+spl_autoload_register(function ($className) {
+    $className = str_replace('\\', '/', $className);
+    $classFile = __DIR__ . '/../src/' . $className . '.php';
+    if (file_exists($classFile)) {
+        include($classFile);
+    }
+});
+
+switch ($cmd) {
+    case 'start':
+        $port = $argv[3] ?? '8000';
+        $pid = getmypid();
+        file_put_contents($pidFile, $pid);
+        echo "listening on :{$port}\r\n";
+        startServer($app, $port);
+        break;
+    case 'stop':
+        $pid = file_get_contents($pidFile);
+        echo exec("kill -TERM {$pid}");
+        exit(0);
+    case 'reload':
+        $pid = file_get_contents($pidFile);
+        echo exec("kill -USR1 {$pid}");
+        exit(0);
+}
+
+// 启动httpserver
+function startServer($app, $port)
+{
+    $server = new swoole_http_server('0.0.0.0', $port, SWOOLE_PROCESS, SWOOLE_SOCK_TCP);
+    $server->set([
+        'max_request' => 500,
+    ]);
+    $appRoot = realpath(__DIR__ . '/../../../../');
+
+    $bootstrapFile = $appRoot . '/worker_bootstrap.php';
+    if (!file_exists($bootstrapFile)) {
+        echo "skip loading bootstrap, {$bootstrapFile} not exists\r\n";
+        $bootstrapFile = null;
+    }
+    $stopFile = $appRoot . '/worker_stop.php';
+    if (!file_exists($stopFile)) {
+        echo "skip loading stop, {$stopFile} not exists\r\n";
+        $stopFile = null;
+    }
+
+    $server->on('workerStart', function (swoole_http_server $server, $workerId) use ($bootstrapFile) {
+        if ($bootstrapFile) {
+            require $bootstrapFile;
+        }
+        defined('YII_DEBUG') or define('YII_DEBUG', true);
+        defined('YII_ENV') or define('YII_ENV', 'dev');
+    });
+
+    $server->on('workerStop', function (swoole_http_server $server, $workerId) use ($stopFile) {
+        if ($stopFile) {
+            require $stopFile;
+        }
+    });
+
+    $server->on('request', function (swoole_http_request $request, swoole_http_response $response) use ($app) {
+        \onswoole\WorkerCallback::httpRequest($app, $request, $response);
+    });
+
+    $server->start();
+}
+
+function cmdHelp()
+{
+    echo "usage: vendor/bin/yii2onswoole (start|stop|reload) \$app \$port\r\n";
+}
+
+function checkApp($app)
+{
+    $appRoot = realpath(__DIR__ . '/../../../../');
+    if (is_dir($appRoot . '/' . ($app ? $app . '/' : '') . 'config/') == false) {
+        echo "app dir not found\r\n";
+        exit(1);
+    }
+}
