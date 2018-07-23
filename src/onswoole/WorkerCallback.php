@@ -98,17 +98,16 @@ class WorkerCallback
                 $request_uri .= '?';
                 $request_uri .= $request->server['query_string'];
             }
-            echo date('Y-m-d H:i:s'), " [\033[32m{$request_method}\033[0m] ", $request_uri, ' ', $remote_addr, ' ';
             $status = \Yii::$app->getResponse()->statusCode;
             if ($status < 300) {
-                echo "[\033[32m{$status}\033[0m]";
+                $colorStatus = "[\033[32m{$status}\033[0m]";
             } elseif ($status < 400) {
-                echo "[\033[34m{$status}\033[0m]";
+                $colorStatus = "[\033[34m{$status}\033[0m]";
             } else {
-                echo "[\033[31m{$status}\033[0m]";
+                $colorStatus = "[\033[31m{$status}\033[0m]";
             }
 
-            echo "\r\n";
+            echo date('Y-m-d H:i:s'), " [\033[32m{$request_method}\033[0m] ", $request_uri, ' ', $remote_addr, ' ', $colorStatus, ' ', round(memory_get_usage() / 1024 / 1024, 1), 'MB ', "\r\n";
         }
     }
 }
