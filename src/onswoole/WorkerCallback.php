@@ -6,47 +6,25 @@
 namespace onswoole;
 
 
+use onswoole\yii2\WebApplication;
 use swoole_http_request;
 use swoole_http_response;
 
 class WorkerCallback
 {
-    public static function httpRequest($app, swoole_http_request $request, swoole_http_response $response)
+    public static function httpRequest(swoole_http_request $request, swoole_http_response $response)
     {
         static::resetGlobalVariables($request);
-        $appRoot = realpath(__DIR__ . '/../../../../../');
-
-        require_once($appRoot . '/vendor/autoload.php');
-        require_once($appRoot . '/vendor/yiisoft/yii2/Yii.php');
-
-        if ($app) {
-            require($appRoot . '/common/config/bootstrap.php');
-            require($appRoot . "/{$app}/config/bootstrap.php");
-
-            $config = \yii\helpers\ArrayHelper::merge(
-                require($appRoot . '/common/config/main.php'),
-                require($appRoot . '/common/config/main-local.php'),
-                require($appRoot . "/{$app}/config/main.php"),
-                require($appRoot . "/{$app}/config/main-local.php")
-            );
-            $scriptFile = $appRoot . "/{$app}/web/index.php";
-        } else {
-            $config = require($appRoot . '/config/web.php');
-            $scriptFile = $appRoot . "/web/index.php";
+        $app = \Yii::$app;
+        $components = $app->coreComponents();
+        foreach ($components as $componentName => $classConfig) {
+            $config = array_merge($classConfig, $app->rawConfig['components'][$componentName] ?? []);
+            $app->set($componentName, $config);
         }
-
-        $config['components']['request']['class'] = '\onswoole\yii2\Request';
-        $config['components']['request']['swoole_http_request'] = $request;
-        $config['components']['request']['scriptFile'] = $scriptFile;
-        $config['components']['response']['class'] = '\onswoole\yii2\Response';
-        $config['components']['response']['swoole_http_response'] = $response;
-        $config['components']['session']['class'] = '\onswoole\yii2\RedisSession';
-        $config['components']['log']['logger']['class'] = '\onswoole\yii2\Logger';
-        $config['components']['errorHandler']['class'] = '\onswoole\yii2\ErrorHandler';
-        $config['on afterRequest'] = [self::class, 'afterRequest'];
-
-        (new \onswoole\yii2\WebApplication($config))->run();
-
+        $app->request->swoole_http_request = $request;
+        $app->response->swoole_http_response = $response;
+        $app->run();
+        WebApplication::reset();
     }
 
     /**
@@ -88,8 +66,7 @@ class WorkerCallback
     {
         $request = \Yii::$app->request->swoole_http_request;
         \Yii::$app->session->persist();
-        $logger = \Yii::getLogger();
-        $logger->flush(true);
+        \Yii::$app->log->logger->flush(true);
         if (YII_DEBUG) {
             $remote_addr = $request->server['remote_addr'];
             $request_method = $request->server['request_method'];

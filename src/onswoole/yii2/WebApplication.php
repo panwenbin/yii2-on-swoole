@@ -11,6 +11,8 @@ use yii\web\Application;
 
 class WebApplication extends Application
 {
+    public $rawConfig;
+
     /**
      * @return bool|int
      * @throws ExitException
@@ -68,5 +70,14 @@ class WebApplication extends Application
         }
 
         throw new ExitException($status);
+    }
+
+    public static function reset()
+    {
+        \yii\base\Event::offAll();
+        \yii\base\Widget::$stack = [];
+        \yii\base\Widget::$counter = 0;
+        \yii\caching\Dependency::resetReusableData();
+        \yii\web\UploadedFile::reset();
     }
 }

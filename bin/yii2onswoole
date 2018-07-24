@@ -50,7 +50,10 @@ function startServer($app, $port)
 
     $bootstrapFile = $appRoot . '/worker_bootstrap.php';
     if (!file_exists($bootstrapFile)) {
-        echo "skip loading bootstrap, {$bootstrapFile} not exists\r\n";
+        if (!copy(__DIR__ . '/../worker_bootstrap-sample.php', $bootstrapFile)) {
+            echo "{$bootstrapFile} not exists, please copy one from sample!\r\n";
+            exit(1);
+        }
         $bootstrapFile = null;
     }
     $stopFile = $appRoot . '/worker_stop.php';
@@ -59,12 +62,10 @@ function startServer($app, $port)
         $stopFile = null;
     }
 
-    $server->on('workerStart', function (swoole_http_server $server, $workerId) use ($bootstrapFile) {
+    $server->on('workerStart', function (swoole_http_server $server, $workerId) use ($bootstrapFile, $app) {
         if ($bootstrapFile) {
             require $bootstrapFile;
         }
-        defined('YII_DEBUG') or define('YII_DEBUG', true);
-        defined('YII_ENV') or define('YII_ENV', 'dev');
     });
 
     $server->on('workerStop', function (swoole_http_server $server, $workerId) use ($stopFile) {
@@ -73,8 +74,8 @@ function startServer($app, $port)
         }
     });
 
-    $server->on('request', function (swoole_http_request $request, swoole_http_response $response) use ($app) {
-        \onswoole\WorkerCallback::httpRequest($app, $request, $response);
+    $server->on('request', function (swoole_http_request $request, swoole_http_response $response) {
+        \onswoole\WorkerCallback::httpRequest($request, $response);
     });
 
     $server->start();
