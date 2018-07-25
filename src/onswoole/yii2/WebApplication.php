@@ -77,7 +77,17 @@ class WebApplication extends Application
         \yii\base\Event::offAll();
         \yii\base\Widget::$stack = [];
         \yii\base\Widget::$counter = 0;
-        \yii\caching\Dependency::resetReusableData();
         \yii\web\UploadedFile::reset();
+
+        if (\Yii::$app->requestedAction) {
+            \Yii::$app->requestedAction->controller = null;
+            \Yii::$app->requestedAction = null;
+        }
+        if (\Yii::$app->controller) {
+            \Yii::$app->controller->detachBehaviors();
+            \Yii::$app->controller->module = null;
+            \Yii::$app->controller->action = null;
+            \Yii::$app->controller = null;
+        }
     }
 }
