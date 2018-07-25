@@ -17,7 +17,7 @@ class WorkerCallback
         static::resetGlobalVariables($request);
         $app = \Yii::$app;
         $coreComponents = $app->coreComponents();
-        $rebuildComponents = array_intersect_key($app->rawConfig['components'], ['user' => true, 'request' => true, 'response' => true]);
+        $rebuildComponents = array_intersect_key($app->rawConfig['components'], ['user' => true, 'request' => true, 'response' => true, 'view' => true]);
         foreach ($rebuildComponents as $componentName => $componentConfig) {
             $config = array_merge($coreComponents[$componentName] ?? [], $app->rawConfig['components'][$componentName]);
             $app->set($componentName, $config);
