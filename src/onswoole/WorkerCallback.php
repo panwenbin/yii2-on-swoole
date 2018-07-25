@@ -16,9 +16,10 @@ class WorkerCallback
     {
         static::resetGlobalVariables($request);
         $app = \Yii::$app;
-        $components = $app->coreComponents();
-        foreach ($components as $componentName => $classConfig) {
-            $config = array_merge($classConfig, $app->rawConfig['components'][$componentName] ?? []);
+        $coreComponents = $app->coreComponents();
+        $rebuildComponents = array_intersect_key($coreComponents, ['user' => true, 'request' => true, 'response' => true]);
+        foreach ($rebuildComponents as $componentName => $componentConfig) {
+            $config = array_merge($componentConfig, $app->rawConfig['components'][$componentName] ?? []);
             $app->set($componentName, $config);
         }
         $app->request->swoole_http_request = $request;
