@@ -29,6 +29,7 @@ $config['components']['response']['class'] = '\onswoole\yii2\Response';
 $config['components']['session']['class'] = '\onswoole\yii2\RedisSession';
 $config['components']['log']['logger']['class'] = '\onswoole\yii2\Logger';
 $config['components']['errorHandler']['class'] = '\onswoole\yii2\ErrorHandler';
+$config['components']['db']['commandClass'] = '\onswoole\yii2\DbCommand';
 $config['on afterRequest'] = ['\onswoole\WorkerCallback', 'afterRequest'];
 
 $app = new \onswoole\yii2\WebApplication($config);
