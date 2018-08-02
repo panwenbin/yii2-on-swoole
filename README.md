@@ -19,7 +19,7 @@ $ vendor/bin/yii2onswoole start '' 8001
 ```
 
 ## worker_bootstrap.php
-在Yii项目的根目录建立`worker_bootstrap.php`，此文件在worker启动时调用，可以定义YII_DEBUG等
+第一次运行会复制启动配置文件到根目录 `worker_bootstrap.php`，此文件在worker启动时调用，修改它可以定义YII_DEBUG等，或者替换组件
 ```php
 defined('YII_DEBUG') or define('YII_DEBUG', false); // 如果不定义则是true
 defined('YII_ENV') or define('YII_ENV', 'prod'); // 如果不定义则是dev
